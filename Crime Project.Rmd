@@ -1,0 +1,206 @@
+---
+title: "Crime Data"
+author: "Alex Hentz"
+date: "2024-01-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+crime <- read.csv("C:/Users/alexh/Downloads/Crime_Data_from_2020_to_Present.csv")
+View(crime)
+crime_2 <- read.csv("C:/Users/alexh/Downloads/Crime_Data_from_2010_to_2019.csv")
+View(crime_2)
+library(tidyverse)
+library(dplyr)
+
+# Top 15 types of Crime in the City of Los Angeles
+
+N <- 15
+
+crime <- mutate(crime, Crm.Cd.Desc = as.character(Crm.Cd.Desc))
+
+common_crime_dest <- crime %>% count(Crm.Cd.Desc, sort = TRUE)
+
+most_common_dest <- head(common_crime_dest, N)
+
+cat("Top", N, "most common Crm.Cd.Desc are:\n")
+print(most_common_dest[, c("Crm.Cd.Desc", "n")])
+
+
+# Plot the top 15 types of Crime reported 
+library(ggplot2)
+library(plotly)
+
+plot_ly(data = most_common_dest, x = ~Crm.Cd.Desc, y = ~n, type = "bar", marker = list(color = "skyblue")) %>%
+  layout(title = paste("Top", N, "Most Common Crm.Cd.Desc"),
+         xaxis = list(title = "Crime Description"),
+         yaxis = list(title = "Count"))
+
+
+# Split them up by year and the month
+library(lubridate)
+
+N <- 15
+
+crime <- mutate(crime, Date.Rptd = as.character(Date.Rptd))
+
+crime <- mutate(crime, ParsedDate = mdy_hms(Date.Rptd))
+
+crime <- mutate(crime, Month = month(ParsedDate), Year = year(ParsedDate))
+
+crime <- mutate(crime, Crm.Cd.Desc = as.character(Crm.Cd.Desc))
+
+common_crime_dest <- crime %>% count(Year, Month, Crm.Cd.Desc, sort = TRUE)
+
+top_crimes_by_month_year <- common_crime_dest %>%
+  group_by(Year, Month) %>%
+  slice_head(n = N)
+
+print(top_crimes_by_month_year[, c("Year", "Month", "Crm.Cd.Desc", "n")])
+
+# Combine the months of each year
+N <- 15
+
+crime <- mutate(crime, Date.Rptd = as.character(Date.Rptd), Crm.Cd.Desc = as.character(Crm.Cd.Desc))
+
+crime <- mutate(crime, ParsedDate = lubridate::mdy_hms(Date.Rptd))
+
+crime <- mutate(crime, Month = month(ParsedDate), Year = year(ParsedDate))
+
+common_crime_dest <- crime %>% count(Year, Month, Crm.Cd.Desc, sort = TRUE)
+
+top_crimes_by_month_year <- common_crime_dest %>%
+  group_by(Year, Crm.Cd.Desc) %>%
+  summarize(TotalCount = sum(n)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice_head(n = N)
+
+print(top_crimes_by_month_year)
+
+# Plot the Results on a Bar Chart
+plot_2 <- plot_ly(top_crimes_by_month_year, x = ~as.factor(Year), y = ~TotalCount, color = ~Crm.Cd.Desc, type = 'bar') %>%
+  layout(barmode = 'stack', title = 'Top 15 Crimes by Year')
+
+plot_2
+
+# Cleaning Crime_2 data
+N <- 15
+
+crime_2 <- mutate(crime_2, Crm.Cd.Desc = as.character(Crm.Cd.Desc))
+
+common_crime_dest_2 <- crime_2 %>% count(Crm.Cd.Desc, sort = TRUE)
+
+most_common_dest_2 <- head(common_crime_dest_2, N)
+
+cat("Top", N, "most common Crm.Cd.Desc are:\n")
+print(most_common_dest_2[, c("Crm.Cd.Desc", "n")])
+
+
+
+N <- 15
+
+crime_2 <- mutate(crime_2, Date.Rptd = as.character(Date.Rptd))
+
+crime_2 <- mutate(crime_2, ParsedDate = mdy_hms(Date.Rptd))
+
+crime_2 <- mutate(crime_2, Month = month(ParsedDate), Year = year(ParsedDate))
+
+crime_2 <- mutate(crime_2, Crm.Cd.Desc = as.character(Crm.Cd.Desc))
+
+common_crime_dest_2 <- crime_2 %>% count(Year, Month, Crm.Cd.Desc, sort = TRUE)
+
+top_crimes_by_month_year_2 <- common_crime_dest_2 %>%
+  group_by(Year, Month) %>%
+  slice_head(n = N)
+
+print(top_crimes_by_month_year_2[, c("Year", "Month", "Crm.Cd.Desc", "n")])
+
+N <- 15
+
+crime_2 <- mutate(crime_2, Date.Rptd = as.character(Date.Rptd), Crm.Cd.Desc = as.character(Crm.Cd.Desc))
+
+crime_2 <- mutate(crime_2, ParsedDate = lubridate::mdy_hms(Date.Rptd))
+
+crime_2 <- mutate(crime_2, Month = month(ParsedDate), Year = year(ParsedDate))
+
+common_crime_dest_2 <- crime_2 %>% count(Year, Month, Crm.Cd.Desc, sort = TRUE)
+
+top_crimes_by_month_year_2 <- common_crime_dest_2 %>%
+  group_by(Year, Crm.Cd.Desc) %>%
+  summarize(TotalCount = sum(n)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice_head(n = N)
+
+print(top_crimes_by_month_year_2)
+
+# Plot for Crime_2 
+plot_4 <- plot_ly(top_crimes_by_month_year_2, x = ~as.factor(Year), y = ~TotalCount, color = ~Crm.Cd.Desc, type = 'bar') %>%
+  layout(barmode = 'stack', title = 'Top 15 Crimes by Year')
+
+plot_4
+
+# Merge Crime 1 and 2 data sets
+all_crime <- rbind(crime, crime_2)
+
+# Show top 15 from 2010 to Present
+N <- 30
+
+all_crime <- mutate(all_crime, Crm.Cd.Desc = as.character(Crm.Cd.Desc))
+
+common_crime_dest_3 <- all_crime %>% count(Crm.Cd.Desc, sort = TRUE)
+
+most_common_dest_3 <- head(common_crime_dest_3, N)
+
+N <- 30
+
+all_crime <- mutate(all_crime, Date.Rptd = as.character(Date.Rptd))
+
+all_crime <- mutate(all_crime, ParsedDate = mdy_hms(Date.Rptd))
+
+all_crime <- mutate(all_crime, Month = month(ParsedDate), Year = year(ParsedDate))
+
+all_crime <- mutate(all_crime, Crm.Cd.Desc = as.character(Crm.Cd.Desc))
+
+common_crime_dest_3 <- all_crime %>% count(Year, Month, Crm.Cd.Desc, sort = TRUE)
+
+top_crimes_by_month_year_3 <- common_crime_dest_3 %>%
+  group_by(Year, Month) %>%
+  slice_head(n = N)
+
+N <- 30
+
+all_crime <- mutate(all_crime, Date.Rptd = as.character(Date.Rptd), Crm.Cd.Desc = as.character(Crm.Cd.Desc))
+
+all_crime <- mutate(all_crime, ParsedDate = lubridate::mdy_hms(Date.Rptd))
+
+all_crime <- mutate(all_crime, Month = month(ParsedDate), Year = year(ParsedDate))
+
+common_crime_dest_3 <- all_crime %>% count(Year, Month, Crm.Cd.Desc, sort = TRUE)
+
+top_crimes_by_month_year_3 <- common_crime_dest_3 %>%
+  group_by(Year, Crm.Cd.Desc) %>%
+  summarize(TotalCount = sum(n)) %>%
+  arrange(desc(TotalCount)) %>%
+  slice_head(n = N)
+
+
+N <- 30
+
+all_crime <- mutate(all_crime, Date.Rptd = as.character(Date.Rptd), Crm.Cd.Desc = as.character(Crm.Cd.Desc))
+
+all_crime <- mutate(all_crime, ParsedDate = lubridate::mdy_hms(Date.Rptd))
+
+all_crime <- mutate(all_crime, Month = month(ParsedDate), Year = year(ParsedDate))
+
+common_crime_dest_3 <- all_crime %>% count(Year, Month, Crm.Cd.Desc, sort = TRUE)
+
+# Plot 
+plot_3 <- plot_ly(top_crimes_by_month_year_3, x = ~as.factor(Year), y = ~TotalCount, color = ~Crm.Cd.Desc, type = 'bar') %>%
+  layout(barmode = 'stack', title = 'Top 15 Crimes by Year')
+
+plot_3
